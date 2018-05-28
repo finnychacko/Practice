@@ -1,0 +1,63 @@
+---
+title: "Untitled"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tree)
+adv=read.csv("E:/Term 2/ML/Datasets/Advertising.csv")
+model_tree = tree(sales~TV,data=adv)
+{{plot(model_tree)
+  text(model_tree)}}
+adv %>% filter(TV>122.05) %>% summarise(mean(sales))
+```
+
+
+
+```{r}
+TV_uniqs <- sort(unique(adv$TV))
+
+cuts <- c()
+mses <- c()
+for (i in seq(1,length(TV_uniqs)-1)) {
+  curr_cut <- (TV_uniqs[i] + TV_uniqs[i+1]) / 2
+  cuts <- c(cuts,curr_cut) 
+  samples_left <- adv %>% filter(TV<curr_cut)
+  samples_right <- adv %>% filter(TV>curr_cut)
+  avg_left <- mean(samples_left$sales)
+  avg_right <- mean(samples_right$sales)
+  adv$predicted_sales <- if_else(adv$TV<curr_cut,avg_left,avg_right)
+  curr_mse = sum((adv$sales-adv$predicted_sales)^2) / nrow(adv)
+  mses = c(mses,curr_mse)
+}
+models_perf = data.frame(TV_cut=cuts,MSE=mses)
+models_perf %>% arrange(MSE) %>% head(1)
+```
+
+```{r}
+adv_temp <- adv %>% filter(TV<122.05)
+
+cuts <- c()
+mses <- c()
+TV_uniqs <- sort(unique(adv_temp$TV))
+for (i in seq(1,length(TV_uniqs)-1)) {
+  curr_cut <- (TV_uniqs[i] + TV_uniqs[i+1]) / 2
+  cuts <- c(cuts,curr_cut) 
+  samples_left <- adv_temp %>% filter(TV<curr_cut)
+  samples_right <- adv_temp %>% filter(TV>curr_cut)
+  avg_left <- mean(samples_left$sales)
+  avg_right <- mean(samples_right$sales)
+  adv_temp$predicted_sales <- if_else(adv_temp$TV<curr_cut,avg_left,avg_right)
+  curr_mse = sum((adv_temp$sales-adv_temp$predicted_sales)^2) / nrow(adv_temp)
+  mses = c(mses,curr_mse)
+}
+models_perf = data.frame(TV_cut=cuts,MSE=mses)
+models_perf %>% arrange(MSE) %>% head(1)
+
+adv %>% filter(TV<30.05) %>% summarise(mean(sales))
+```
+
